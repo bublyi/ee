@@ -308,7 +308,7 @@
     const acceptable = document.getElementById('acceptableResponse').value;
     const llm = document.getElementById('llmResponse').value;
 
-    outputRaw = `user's prompt:\n${prompt}\n\nacceptable/correct response:\n${acceptable}\n\nactual llm's response (response x):\n${llm}`;
+    outputRaw = `user's prompt:\n${prompt}\n\nacceptable/correct response:\n${acceptable}\n\nactual llm's response (response x):\n${llm}\n\nAre there any issues at all with response x?`;
 
     const container = document.getElementById('outputText');
     container.innerHTML = '';
