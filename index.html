@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LLM Response Formatter</title>
+<link href="https://fonts.googleapis.com/css2?family=Raleway:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #f7f4f0;
+    --surface: #fffcf9;
+    --surface2: #f2ede8;
+    --border: #e8e0d8;
+    --accent: #c9a99a;
+    --accent2: #a8c4bc;
+    --accent3: #b8a9c9;
+    --text: #3d3530;
+    --text-muted: #8a7d76;
+    --label: #6b5e58;
+    --shadow: 0 2px 16px rgba(100,80,70,0.08);
+    --radius: 14px;
+  }
+
+  body {
+    font-family: 'Raleway', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding: 40px 24px 60px;
+  }
+
+  header {
+    text-align: center;
+    margin-bottom: 40px;
+  }
+
+  header h1 {
+    font-size: 1.7rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    color: var(--text);
+  }
+
+  header p {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    margin-top: 6px;
+    font-weight: 400;
+  }
+
+  .dot {
+    display: inline-block;
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    margin: 0 3px;
+    vertical-align: middle;
+  }
+  .dot-1 { background: var(--accent); }
+  .dot-2 { background: var(--accent2); }
+  .dot-3 { background: var(--accent3); }
+
+  .inputs-row {
+    display: flex;
+    gap: 16px;
+    max-width: 1200px;
+    margin: 0 auto 28px;
+    align-items: stretch;
+  }
+
+  .input-card {
+    flex: 1;
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+    box-shadow: var(--shadow);
+    display: flex;
+    flex-direction: column;
+    transition: border-color 0.2s;
+  }
+
+  .input-card:focus-within {
+    border-color: var(--accent);
+  }
+
+  .input-card:nth-child(2):focus-within { border-color: var(--accent2); }
+  .input-card:nth-child(3):focus-within { border-color: var(--accent3); }
+
+  .input-label {
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--label);
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+  }
+
+  .tag {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 20px;
+    font-size: 0.65rem;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+  }
+
+  .tag-1 { background: #f5e6e2; color: #a0675a; }
+  .tag-2 { background: #e2eeeb; color: #547a73; }
+  .tag-3 { background: #ede9f5; color: #6d5a8a; }
+
+  textarea {
+    font-family: 'Raleway', sans-serif;
+    font-size: 0.88rem;
+    color: var(--text);
+    background: var(--surface2);
+    border: 1.5px solid transparent;
+    border-radius: 9px;
+    padding: 12px 14px;
+    resize: vertical;
+    min-height: 180px;
+    flex: 1;
+    line-height: 1.6;
+    outline: none;
+    transition: border-color 0.2s, background 0.2s;
+    white-space: pre-wrap;
+  }
+
+  textarea:focus {
+    background: #fff;
+    border-color: var(--border);
+  }
+
+  textarea::placeholder {
+    color: #c0b4ae;
+    font-style: italic;
+  }
+
+  .actions {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 36px;
+  }
+
+  button {
+    font-family: 'Raleway', sans-serif;
+    font-weight: 600;
+    font-size: 0.88rem;
+    letter-spacing: 0.04em;
+    padding: 11px 28px;
+    border-radius: 50px;
+    border: none;
+    cursor: pointer;
+    transition: all 0.18s;
+  }
+
+  .btn-confirm {
+    background: linear-gradient(135deg, #c9a99a 0%, #b89caa 100%);
+    color: #fff;
+    box-shadow: 0 4px 14px rgba(180,130,120,0.3);
+  }
+
+  .btn-confirm:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 18px rgba(180,130,120,0.4);
+  }
+
+  .btn-confirm:active { transform: translateY(0); }
+
+  .btn-copy {
+    background: var(--surface);
+    color: var(--label);
+    border: 1.5px solid var(--border);
+    display: none;
+    align-items: center;
+    gap: 7px;
+  }
+
+  .btn-copy.visible { display: flex; }
+
+  .btn-copy:hover {
+    background: var(--surface2);
+    border-color: var(--accent2);
+    color: var(--text);
+  }
+
+  .btn-copy.copied {
+    border-color: var(--accent2);
+    color: #547a73;
+    background: #e2eeeb;
+  }
+
+  .output-section {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: none;
+    animation: fadeUp 0.35s ease;
+  }
+
+  .output-section.visible { display: block; }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(12px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .output-card {
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius);
+    padding: 28px 32px;
+    box-shadow: var(--shadow);
+  }
+
+  .output-label {
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+    border-bottom: 1.5px solid var(--border);
+  }
+
+  .output-text {
+    font-size: 0.9rem;
+    line-height: 1.75;
+    color: var(--text);
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+
+  .section-divider {
+    display: block;
+    height: 1.5px;
+    background: var(--border);
+    margin: 20px 0;
+    border: none;
+  }
+
+  .section-header {
+    font-weight: 700;
+    color: var(--label);
+    font-size: 0.82rem;
+    letter-spacing: 0.04em;
+    margin-bottom: 6px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .section-body {
+    font-size: 0.9rem;
+    color: var(--text);
+    white-space: pre-wrap;
+    line-height: 1.75;
+  }
+
+  @media (max-width: 700px) {
+    .inputs-row { flex-direction: column; }
+  }
+</style>
+</head>
+<body>
+
+<div class="inputs-row">
+  <div class="input-card">
+    <div class="input-label"><span class="tag tag-1">01</span></div>
+    <textarea id="userPrompt" placeholder="..."></textarea>
+  </div>
+  <div class="input-card">
+    <div class="input-label"><span class="tag tag-2">02</span>✔️</div>
+    <textarea id="acceptableResponse" placeholder="..."></textarea>
+  </div>
+  <div class="input-card">
+    <div class="input-label"><span class="tag tag-3">03</span> Actual</div>
+    <textarea id="llmResponse" placeholder="..."></textarea>
+  </div>
+</div>
+
+<div class="actions">
+  <button class="btn-confirm" onclick="generate()">Confirm</button>
+  <button class="btn-copy" id="copyBtn" onclick="copyOutput()">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+    Copy
+  </button>
+</div>
+
+<div class="output-section" id="outputSection">
+  <div class="output-card">
+    <div class="output-label">Formatted Output</div>
+    <div class="output-text" id="outputText"></div>
+  </div>
+</div>
+
+<script>
+  let outputRaw = '';
+
+  function generate() {
+    const prompt = document.getElementById('userPrompt').value;
+    const acceptable = document.getElementById('acceptableResponse').value;
+    const llm = document.getElementById('llmResponse').value;
+
+    outputRaw = `user's prompt:\n${prompt}\n\nacceptable/correct response:\n${acceptable}\n\nactual llm's response (response x):\n${llm}`;
+
+    const container = document.getElementById('outputText');
+    container.innerHTML = '';
+
+    // Render styled sections
+    const sections = [
+      { label: "user's prompt", color: '#c9a99a', content: prompt },
+      { label: "acceptable/correct response", color: '#a8c4bc', content: acceptable },
+      { label: "actual llm's response (response x)", color: '#b8a9c9', content: llm },
+    ];
+
+    sections.forEach((sec, i) => {
+      if (i > 0) {
+        const hr = document.createElement('hr');
+        hr.className = 'section-divider';
+        container.appendChild(hr);
+      }
+
+      const header = document.createElement('div');
+      header.className = 'section-header';
+      header.innerHTML = `<span style="display:inline-block;width:9px;height:9px;border-radius:50%;background:${sec.color}"></span>${sec.label}:`;
+      container.appendChild(header);
+
+      const body = document.createElement('div');
+      body.className = 'section-body';
+      body.textContent = sec.content;
+      container.appendChild(body);
+    });
+
+    document.getElementById('outputSection').classList.add('visible');
+    const copyBtn = document.getElementById('copyBtn');
+    copyBtn.classList.add('visible');
+    copyBtn.classList.remove('copied');
+    copyBtn.textContent = '';
+    copyBtn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy`;
+
+    document.getElementById('outputSection').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  function copyOutput() {
+    navigator.clipboard.writeText(outputRaw).then(() => {
+      const btn = document.getElementById('copyBtn');
+      btn.classList.add('copied');
+      btn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Copied!`;
+      setTimeout(() => {
+        btn.classList.remove('copied');
+        btn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy`;
+      }, 2000);
+    });
+  }
+</script>
+</body>
+</html>
