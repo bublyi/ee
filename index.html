@@ -291,6 +291,9 @@
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
     Copy
   </button>
+  <button class="btn-copy" id="issuesBtn" onclick="copyIssues()">
+    Issues
+  </button>
 </div>
 
 <div class="output-section" id="outputSection">
@@ -304,49 +307,76 @@
   let outputRaw = '';
 
   function generate() {
-    const prompt = document.getElementById('userPrompt').value;
-    const acceptable = document.getElementById('acceptableResponse').value;
-    const llm = document.getElementById('llmResponse').value;
+  const prompt = document.getElementById('userPrompt').value.trim();
+  const acceptable = document.getElementById('acceptableResponse').value.trim();
+  const llm = document.getElementById('llmResponse').value.trim();
 
-    outputRaw = `user's prompt:\n${prompt}\n\nacceptable/correct response:\n${acceptable}\n\nactual llm's response (response x):\n${llm}\n\nAre there any issues at all with response x?`;
+  outputRaw = ''; // reset output
 
-    const container = document.getElementById('outputText');
-    container.innerHTML = '';
+  const sections = [
+    { label: "user's prompt", color: '#c9a99a', content: prompt },
+    { label: "acceptable/correct response", color: '#a8c4bc', content: acceptable },
+    { label: "actual llm's response (response x)", color: '#b8a9c9', content: llm },
+  ];
 
-    // Render styled sections
-    const sections = [
-      { label: "user's prompt", color: '#c9a99a', content: prompt },
-      { label: "acceptable/correct response", color: '#a8c4bc', content: acceptable },
-      { label: "actual llm's response (response x)", color: '#b8a9c9', content: llm },
-    ];
+  const container = document.getElementById('outputText');
+  container.innerHTML = '';
 
-    sections.forEach((sec, i) => {
-      if (i > 0) {
-        const hr = document.createElement('hr');
-        hr.className = 'section-divider';
-        container.appendChild(hr);
-      }
+  let firstSection = true;
+  sections.forEach((sec) => {
+    if (!sec.content) return; // skip empty sections
 
-      const header = document.createElement('div');
-      header.className = 'section-header';
-      header.innerHTML = `<span style="display:inline-block;width:9px;height:9px;border-radius:50%;background:${sec.color}"></span>${sec.label}:`;
-      container.appendChild(header);
+    if (!firstSection) {
+      const hr = document.createElement('hr');
+      hr.className = 'section-divider';
+      container.appendChild(hr);
+    }
 
-      const body = document.createElement('div');
-      body.className = 'section-body';
-      body.textContent = sec.content;
-      container.appendChild(body);
-    });
+    const header = document.createElement('div');
+    header.className = 'section-header';
+    header.innerHTML = `<span style="display:inline-block;width:9px;height:9px;border-radius:50%;background:${sec.color}"></span>${sec.label}:`;
+    container.appendChild(header);
 
-    document.getElementById('outputSection').classList.add('visible');
-    const copyBtn = document.getElementById('copyBtn');
-    copyBtn.classList.add('visible');
-    copyBtn.classList.remove('copied');
-    copyBtn.textContent = '';
-    copyBtn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy`;
+    const body = document.createElement('div');
+    body.className = 'section-body';
+    body.textContent = sec.content;
+    container.appendChild(body);
 
-    document.getElementById('outputSection').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    outputRaw += `${sec.label}:\n${sec.content}\n\n`;
+
+    firstSection = false;
+  });
+
+  if (!outputRaw) {
+    container.textContent = '(No content to display)';
+  } else {
+    outputRaw += 'Are there any issues at all with response x?';
   }
+
+  document.getElementById('outputSection').classList.add('visible');
+  document.getElementById('copyBtn').classList.add('visible');
+  document.getElementById('copyBtn').classList.remove('copied');
+}
+
+function copyIssues() {
+  const issuesText = `Label common issues in response x. If there are no issues, say 'No common issues'.
+Hallucinations or inaccurately extracted information
+Math or numerical reasoning failures
+Logical reasoning (non-numerical) failures including self-contradictions
+Unnecessarily wordy or overly repetitive
+Overly brief answer
+Failure to accurately and completely execute the instructions specified in the prompt, whether explicitly or implicitly
+Inconsistent, unnecessary, or broken formatting
+Provides irrelevant information relative to the user request
+Contains grammatical, mechanical, or vocabulary errors, or problems with fluency or naturalness
+No common issues`;
+
+  navigator.clipboard.writeText(issuesText).then(() => {
+    const btn = document.getElementById('issuesBtn');
+    btn.textContent = 'Copied!';
+    setTimeout(() => { btn.textContent = 'Issues'; }, 2000);
+  });
+}
 
   function copyOutput() {
     navigator.clipboard.writeText(outputRaw).then(() => {
