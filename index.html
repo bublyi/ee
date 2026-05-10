@@ -350,7 +350,7 @@
   if (!outputRaw) {
     container.textContent = '(No content to display)';
   } else {
-    outputRaw += 'Are there any issues at all with response x?';
+    outputRaw = 'Are there any issues at all with response x?' + outputRaw;
   }
 
   document.getElementById('outputSection').classList.add('visible');
